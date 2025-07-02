@@ -8,7 +8,7 @@ const app = express();
 const upload = multer();
 const PORT = 4000;
 
-const API_KEY = process.env.UPSTAGE_API_KEY;
+const API_KEY = "up_DYMaQNy182Y6aGaRJNQxXnvTcQ5di";
 
 app.use(cors());
 
