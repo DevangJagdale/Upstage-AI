@@ -5,6 +5,7 @@ import DocumentParseDemo from "@/components/document-parse-demo";
 import InformationExtractDemo from "@/components/information-extract-demo";
 import SolarLLMDemo from "@/components/solar-llm-demo";
 import CodeBlock from "@/components/code-block";
+import DemoNotice from "@/components/demo-notice";
 import { FileText, Search, Brain, Rocket, BookOpen, ExternalLink } from "lucide-react";
 
 export default function Home() {
@@ -72,6 +73,13 @@ export default function Home() {
               All demos use live Upstage APIs • Upload your own files • Copy production-ready code
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Demo Notice for Static Deployment */}
+      <section className="py-8 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <DemoNotice />
         </div>
       </section>
 

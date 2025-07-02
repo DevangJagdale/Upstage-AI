@@ -1,0 +1,5 @@
+# Handle client-side routing
+/*    /index.html   200
+
+# API routes would need to be handled by serverless functions or external services
+/api/*  /api-not-available.html  200
