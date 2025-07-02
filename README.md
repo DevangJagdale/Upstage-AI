@@ -4,6 +4,8 @@
 [![GitHub](https://img.shields.io/badge/📂_Source_Code-GitHub-black?style=for-the-badge)](https://github.com/DevangJagdale/Upstage-AI)
 [![Beginner Friendly](https://img.shields.io/badge/👶_Beginner-Friendly-green?style=for-the-badge)]()
 
+## !!! I am running my website on free services offered by render but when there’s no traffic server goes to sleep. However, each time I use it, service starts again, it can take up to a minute it to get back online. Please be patient !!!
+
 > A comprehensive, beginner-friendly demonstration of Upstage AI's three core enterprise-grade capabilities. Built with clear explanations, interactive examples, and step-by-step guidance to help developers of all skill levels understand and implement powerful AI document processing solutions.
 
 ## 📋 Table of Contents
