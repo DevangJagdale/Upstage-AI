@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: process.env.UPSTAGE_API_KEY, // put your key in .env.local
+  apiKey: "up_DYMaQNy182Y6aGaRJNQxXnvTcQ5di",
   baseURL: "https://api.upstage.ai/v1",
 });
 
