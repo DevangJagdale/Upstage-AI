@@ -6,7 +6,6 @@ import FileUpload from "./file-upload";
 import CodeBlock from "./code-block";
 import { Search, Upload, Code2, Lightbulb, Settings, Wand2, FileText } from "lucide-react";
 import { INFORMATION_EXTRACT_EXAMPLES } from "../lib/constants";
-import { apiClient } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 
 export default function InformationExtractDemo() {
@@ -67,19 +66,6 @@ export default function InformationExtractDemo() {
       type: "object",
       properties: {
         bank_name: { type: "string", description: "The name of bank in bank statement" },
-        account_number: { type: "string", description: "Account number" },
-        balance: { type: "number", description: "Account balance" },
-        transactions: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              date: { type: "string" },
-              description: { type: "string" },
-              amount: { type: "number" },
-            },
-          },
-        },
       },
     },
     receipt: {
@@ -107,18 +93,59 @@ export default function InformationExtractDemo() {
     setExtractResult(null);
 
     try {
-      const schema = schemas[selectedDocType as keyof typeof schemas];
-      const result = await apiClient.extractInformation(file, schema);
-      
-      // Parse the content if it's a string
-      const content = result.choices[0].message.content;
-      const extractedData = typeof content === "string" ? JSON.parse(content) : content;
-      setExtractResult(extractedData);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(",")[1];
 
-      toast({
-        title: "Information extracted successfully!",
-        description: "Data has been structured according to your schema",
-      });
+        const payload = {
+          model: "information-extract",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:application/octet-stream;base64,${base64}`,
+                  },
+                },
+              ],
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "document_schema",
+              schema: schemas[selectedDocType as keyof typeof schemas],
+            },
+          },
+        };
+
+        const response = await fetch("https://api.upstage.ai/v1/information-extraction/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer "+process.env.UPSTAGE_API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to extract information from Upstage");
+        }
+
+        const result = await response.json();
+        const content = result.choices[0].message.content;
+        setExtractResult(typeof content === "string" ? JSON.parse(content) : content);
+
+        toast({
+          title: "Information extracted successfully!",
+          description: "Data has been structured according to your schema",
+        });
+      };
+
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error("Information extract error:", error);
       toast({
@@ -131,11 +158,56 @@ export default function InformationExtractDemo() {
     }
   };
 
+  const extractedData = {
+    invoice: {
+      invoice_number: "INV-2024-001",
+      date: "2024-01-15",
+      vendor_name: "TechCorp Solutions",
+      total_amount: 2500.00,
+      line_items: [
+        {
+          description: "Web Development",
+          quantity: 1,
+          unit_price: 2000.00
+        },
+        {
+          description: "Hosting Setup",
+          quantity: 1,
+          unit_price: 500.00
+        }
+      ]
+    },
+    resume: {
+      name: "John Smith",
+      email: "john.smith@email.com",
+      phone: "+1-555-0123",
+      experience: [
+        {
+          company: "Tech Solutions Inc",
+          position: "Senior Developer",
+          duration: "2020-2024"
+        },
+        {
+          company: "StartupCo",
+          position: "Full Stack Developer",
+          duration: "2018-2020"
+        }
+      ],
+      skills: [
+        "JavaScript",
+        "Python",
+        "React",
+        "Node.js",
+        "SQL"
+      ]
+    }
+  };
+
   const getDisplayData = () => {
     if (extractResult) {
       return JSON.stringify(extractResult, null, 2);
     }
-    return "Upload a document to see extracted data here...";
+    return JSON.stringify(extractedData[selectedDocType as keyof typeof extractedData] || extractedData.invoice, null, 2);
   };
 
   return (
@@ -175,12 +247,23 @@ export default function InformationExtractDemo() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <Button className="w-full service-info-extract mb-4">
+              <Wand2 className="mr-2 h-4 w-4" />
+              Auto-Generate Schema
+            </Button>
+            <div className="text-xs text-gray-500 text-center mb-4">Or customize manually below</div>
+
             <CodeBlock
               code={JSON.stringify(schemas[selectedDocType as keyof typeof schemas] || schemas.invoice, null, 2)}
               language="json"
               title="Schema Definition"
               className="text-xs"
             />
+
+            <Button variant="outline" className="w-full mt-4 border-[hsl(43,96%,56%)] text-[hsl(43,96%,56%)] hover:bg-yellow-50">
+              <Code2 className="mr-2 h-4 w-4" />
+              Edit Schema
+            </Button>
           </CardContent>
         </Card>
 
@@ -193,6 +276,15 @@ export default function InformationExtractDemo() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="border border-gray-200 rounded-lg p-4 mb-4">
+              <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                  <span className="text-sm text-gray-600">Sample {selectedDocType} Document</span>
+                </div>
+              </div>
+            </div>
+
             <FileUpload
               accept=".pdf,.docx,.png,.jpg,.jpeg"
               maxSize={50}
@@ -217,6 +309,11 @@ export default function InformationExtractDemo() {
                 </div>
               </div>
             )}
+
+            <Button className="w-full mt-4 bg-gray-50 hover:service-info-extract hover:text-white text-left justify-start">
+              <Upload className="mr-2 h-4 w-4" />
+              Use Sample Document
+            </Button>
           </CardContent>
         </Card>
 
@@ -234,9 +331,19 @@ export default function InformationExtractDemo() {
               language="json"
               title="JSON Output"
             />
+
+            <div className="flex gap-2 mt-4">
+              <Button variant="outline" className="flex-1 border-[hsl(43,96%,56%)] text-[hsl(43,96%,56%)] hover:bg-yellow-50">
+                Copy
+              </Button>
+              <Button variant="outline" className="flex-1 border-[hsl(43,96%,56%)] text-[hsl(43,96%,56%)] hover:bg-yellow-50">
+                Export
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
+
 
       {/* Implementation Examples */}
       <Card>

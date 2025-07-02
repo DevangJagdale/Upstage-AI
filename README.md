@@ -362,3 +362,6 @@ Feel free to use this demo as a starting point for your own projects.
 ---
 
 **Built with ❤️ for the developer community** | **Powered by Upstage AI**
+
+install
+`npm install`, `npm install openai lucide-react`,`npm install form-data`,`npm install express cors multer node-fetch`,`npm install -g tsx` 
