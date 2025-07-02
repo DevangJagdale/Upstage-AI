@@ -95,16 +95,16 @@ npm run type-check   # TypeScript validation
 
 #### **Code Organization**
 ```
-src/
-├── components/          # Reusable UI components
-│   ├── DocumentParser/  # Document parsing interface
-│   ├── InfoExtractor/   # Information extraction UI
-│   └── SolarChat/       # LLM chat interface
-├── hooks/              # Custom React hooks
-├── services/           # API integration layer
-├── types/              # TypeScript type definitions
-├── utils/              # Helper functions
-└── styles/             # Global styles and themes
+client
+  ├──src/
+    ├── components/          # Reusable UI components
+    │   ├── DocumentParser/  # Document parsing interface
+    │   ├── InfoExtractor/   # Information extraction UI
+    │   └── SolarChat/       # LLM chat interface
+
+server/         
+  └── server.ts      # server code for document parser  
+
 ```
 
 ### 🎯 **Why This Tech Stack?**
