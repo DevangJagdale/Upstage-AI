@@ -124,7 +124,7 @@ export default function InformationExtractDemo() {
         const response = await fetch("https://api.upstage.ai/v1/information-extraction/chat/completions", {
           method: "POST",
           headers: {
-            Authorization: "Bearer "+process.env.UPSTAGE_API_KEY,
+            Authorization: "Bearer up_DYMaQNy182Y6aGaRJNQxXnvTcQ5di",
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
