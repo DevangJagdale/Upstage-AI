@@ -193,7 +193,7 @@ export default function DocumentParseDemo() {
               <ul className="space-y-1 text-green-100">
                 <li>• Use high-resolution documents (min 640px width)</li>
                 <li>• Ensure text is at least 2.5% of image height</li>
-                <li>• Split long PDFs (>100 pages) for better performance</li>
+                <li>• Split long PDFs ({'>'}100 pages) for better performance</li>
               </ul>
             </div>
             <div>
