@@ -3,25 +3,7 @@ export class APIClient {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-  }
-
-  async request(endpoint: string, options: RequestInit = {}) {
-    const url = `${this.baseUrl}${endpoint}`;
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `API request failed: ${response.status}`);
-    }
-
-    return response.json();
+    this.baseUrl = '';
   }
 
   async parseDocument(file: File) {
@@ -77,6 +59,11 @@ export class APIClient {
       throw new Error(errorData.error || `Solar LLM chat failed: ${response.status}`);
     }
 
+    return response.json();
+  }
+
+  async healthCheck() {
+    const response = await fetch('/api/health');
     return response.json();
   }
 }
