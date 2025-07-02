@@ -26,7 +26,7 @@ export default function DocumentParseDemo() {
     formData.append("file", file);
 
     try {
-      const response = await fetch("http://100.20.92.101:4000/api/parse-document", {
+      const response = await fetch("https://upstage-ai-server.onrender.com/api/parse-document", {
         method: "POST",
         body: formData,
       });
