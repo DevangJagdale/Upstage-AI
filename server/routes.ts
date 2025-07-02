@@ -41,7 +41,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       formData.append('document', file);
       formData.append('model', 'document-parse');
-      // Removed output_format as it's not a valid field for Upstage API
 
       console.log("Making request to Upstage API...");
       

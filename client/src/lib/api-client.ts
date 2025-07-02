@@ -1,19 +1,12 @@
-// API client with fallback for static deployment
+// API client for Upstage services
 export class APIClient {
   private baseUrl: string;
-  private isStatic: boolean;
 
   constructor() {
     this.baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    this.isStatic = !this.baseUrl || window.location.hostname.includes('netlify');
   }
 
   async request(endpoint: string, options: RequestInit = {}) {
-    if (this.isStatic) {
-      // Return mock data for static deployment
-      return this.getMockResponse(endpoint);
-    }
-
     const url = `${this.baseUrl}${endpoint}`;
     const response = await fetch(url, {
       ...options,
@@ -24,56 +17,67 @@ export class APIClient {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `API request failed: ${response.status}`);
     }
 
     return response.json();
   }
 
-  private getMockResponse(endpoint: string) {
-    // Mock responses for demo purposes
-    if (endpoint.includes('/document-parse')) {
-      return Promise.resolve({
-        elements: [
-          {
-            id: 1,
-            category: 'text',
-            content: {
-              html: '<p>This is a mock response for static deployment demo.</p>',
-              markdown: 'This is a mock response for static deployment demo.',
-              text: 'This is a mock response for static deployment demo.'
-            },
-            page: 1
-          }
-        ]
-      });
+  async parseDocument(file: File) {
+    const formData = new FormData();
+    formData.append('document', file);
+
+    const response = await fetch('/api/document-parse', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Document parse failed: ${response.status}`);
     }
 
-    if (endpoint.includes('/information-extract')) {
-      return Promise.resolve({
-        choices: [{
-          message: {
-            content: JSON.stringify({
-              invoice_number: "DEMO-001",
-              total_amount: 1234.56,
-              vendor_name: "Demo Company"
-            })
-          }
-        }]
-      });
+    return response.json();
+  }
+
+  async extractInformation(file: File, schema: object) {
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('schema', JSON.stringify(schema));
+
+    const response = await fetch('/api/information-extract', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Information extraction failed: ${response.status}`);
     }
 
-    if (endpoint.includes('/solar-chat')) {
-      return Promise.resolve({
-        choices: [{
-          message: {
-            content: "This is a mock response from Solar LLM for the static demo. In a real deployment, this would connect to the Upstage API."
-          }
-        }]
-      });
+    return response.json();
+  }
+
+  async chatWithSolar(messages: any[], reasoningEffort: string = 'medium') {
+    const response = await fetch('/api/solar-chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages,
+        reasoningEffort,
+        stream: false,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Solar LLM chat failed: ${response.status}`);
     }
 
-    return Promise.resolve({ message: 'Mock response for static demo' });
+    return response.json();
   }
 }
 
