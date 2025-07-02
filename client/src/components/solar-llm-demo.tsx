@@ -46,7 +46,7 @@ export default function SolarLLMDemo() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/solar-chat", {
+      const response = await fetch("https://upstage-ai.onrender.com/api/solar-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
