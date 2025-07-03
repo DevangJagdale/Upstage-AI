@@ -56,6 +56,8 @@ export default function ContractAnalyzer() {
 
     try {
       // Step 1: Parse the document using Document Parse API
+      console.log('Starting document parse for file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      
       const formData = new FormData();
       formData.append('document', file);
 
@@ -64,18 +66,36 @@ export default function ContractAnalyzer() {
         body: formData,
       });
 
+      console.log('Document Parse API Response Status:', parseResponse.status, parseResponse.statusText);
+
       if (!parseResponse.ok) {
         throw new Error('Failed to parse document');
       }
 
       const parseResult = await parseResponse.json();
+      console.log('Document Parse API Result:', parseResult);
       
       // Extract text content from parsed elements
       const documentText = parseResult.elements
         ?.map((element: any) => element.content?.text || '')
         .join('\n') || '';
 
+      console.log('Extracted document text length:', documentText.length);
+      console.log('First 500 characters of extracted text:', documentText.substring(0, 500));
+      console.log('Parse result elements count:', parseResult.elements?.length || 0);
+      console.log('Parse result structure:', {
+        hasElements: !!parseResult.elements,
+        elementsType: typeof parseResult.elements,
+        firstElement: parseResult.elements?.[0],
+        allKeys: Object.keys(parseResult)
+      });
+
       if (!documentText.trim()) {
+        console.error('No text content found. Parse result details:', {
+          parseResult,
+          elementsArray: parseResult.elements,
+          documentTextLength: documentText.length
+        });
         throw new Error('No text content found in document');
       }
 
