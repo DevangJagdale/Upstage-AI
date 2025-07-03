@@ -49,6 +49,27 @@ export default function ContractAnalyzer() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'parsing' | 'analyzing' | 'complete'>('upload');
   const { toast } = useToast();
 
+  // Helper function to extract text from HTML
+  const extractTextFromHTML = (html: string): string => {
+    try {
+      // Create a temporary DOM element to parse HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      
+      // Extract text content and clean it up
+      const textContent = tempDiv.textContent || tempDiv.innerText || '';
+      
+      // Clean up extra whitespace and normalize line breaks
+      return textContent
+        .replace(/\s+/g, ' ')
+        .replace(/\n\s*\n/g, '\n')
+        .trim();
+    } catch (error) {
+      console.error('Error extracting text from HTML:', error);
+      return '';
+    }
+  };
+
   const handleFileUpload = async (file: File) => {
     setIsProcessing(true);
     setCurrentStep('parsing');
@@ -75,28 +96,54 @@ export default function ContractAnalyzer() {
       const parseResult = await parseResponse.json();
       console.log('Document Parse API Result:', parseResult);
       
-      // Extract text content from parsed elements
-      const documentText = parseResult.elements
-        ?.map((element: any) => element.content?.text || '')
-        .join('\n') || '';
+      // Extract text content from parsed result with multiple fallback strategies
+      let documentText = '';
 
-      console.log('Extracted document text length:', documentText.length);
+      // Strategy 1: Try to extract from elements array
+      if (parseResult.elements && Array.isArray(parseResult.elements)) {
+        documentText = parseResult.elements
+          .map((element: any) => element.content?.text || '')
+          .join('\n');
+        console.log('Extracted text from elements array, length:', documentText.length);
+      }
+
+      // Strategy 2: Try to extract from content.text
+      if (!documentText.trim() && parseResult.content?.text) {
+        documentText = parseResult.content.text;
+        console.log('Extracted text from content.text, length:', documentText.length);
+      }
+
+      // Strategy 3: Try to extract from content.html
+      if (!documentText.trim() && parseResult.content?.html) {
+        documentText = extractTextFromHTML(parseResult.content.html);
+        console.log('Extracted text from content.html, length:', documentText.length);
+      }
+
+      // Strategy 4: Try to extract from top-level html property
+      if (!documentText.trim() && parseResult.html) {
+        documentText = extractTextFromHTML(parseResult.html);
+        console.log('Extracted text from top-level html, length:', documentText.length);
+      }
+
+      console.log('Final extracted document text length:', documentText.length);
       console.log('First 500 characters of extracted text:', documentText.substring(0, 500));
-      console.log('Parse result elements count:', parseResult.elements?.length || 0);
       console.log('Parse result structure:', {
         hasElements: !!parseResult.elements,
         elementsType: typeof parseResult.elements,
-        firstElement: parseResult.elements?.[0],
+        hasContentText: !!parseResult.content?.text,
+        hasContentHtml: !!parseResult.content?.html,
+        hasTopLevelHtml: !!parseResult.html,
         allKeys: Object.keys(parseResult)
       });
 
       if (!documentText.trim()) {
-        console.error('No text content found. Parse result details:', {
+        console.error('No text content found after all extraction strategies. Parse result details:', {
           parseResult,
           elementsArray: parseResult.elements,
+          contentObject: parseResult.content,
           documentTextLength: documentText.length
         });
-        throw new Error('No text content found in document');
+        throw new Error('No text content found in document. The document may be empty or in an unsupported format.');
       }
 
       setCurrentStep('analyzing');
