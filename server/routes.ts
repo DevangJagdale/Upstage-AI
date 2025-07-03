@@ -1,12 +1,10 @@
-import express, { type Express } from "express";
-import cors from "cors";
+import type { Express } from "express";
 import { createServer, type Server } from "http";
+import cors from "cors";
 import multer from "multer";
 import fetch from "node-fetch";
 import FormData from "form-data";
-
-const app = express();
-const PORT = 4000;
+import express from "express";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -15,18 +13,21 @@ const upload = multer({
   }
 });
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Register Routes
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.use(cors({
+    origin: process.env.NODE_ENV === 'production' 
+      ? 'https://upstage-ai.onrender.com' 
+      : ['http://localhost:3000', 'http://localhost:8000', 'http://127.0.0.1:8000'],
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }));
+  app.use(express.json());
+
   const apiKey = process.env.UPSTAGE_API_KEY || "up_DYMaQNy182Y6aGaRJNQxXnvTcQ5di";
-  
   console.log("Upstage API Key configured:", apiKey ? "✓" : "✗");
 
   // Document Parse endpoint
-  app.post("/api/document-parse", upload.single('document'), async (req, res) => {
+  app.post("/api/document-pars", upload.single('document'), async (req, res) => {
     try {
       console.log("Document parse request received");
       
@@ -43,8 +44,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create FormData for the API request
       const formData = new FormData();
-      
-      // Use buffer directly instead of Blob/File for Node.js compatibility
       formData.append('document', req.file.buffer, {
         filename: req.file.originalname || 'document',
         contentType: req.file.mimetype
@@ -64,15 +63,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Upstage API response status:", response.status);
 
+      // Log raw response body for debugging
+      const responseBody = await response.text();
+      console.log("Upstage API raw response:", responseBody);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Upstage API error:", errorText);
-        throw new Error(`API request failed: ${response.status} - ${errorText}`);
+        console.error("Upstage API error:", response.status, responseBody);
+        return res.status(response.status).json({ 
+          error: "Upstage API request failed", 
+          details: responseBody || "No response body"
+        });
       }
 
-      const result = await response.json();
+      // Attempt to parse JSON
+      let result;
+      try {
+        result = JSON.parse(responseBody);
+      } catch (parseError) {
+        console.error("Failed to parse Upstage API response as JSON:", parseError);
+        return res.status(500).json({ 
+          error: "Invalid response from Upstage API", 
+          details: "Response is not valid JSON: " + responseBody
+        });
+      }
+
       console.log("Document parse successful, elements count:", result.elements?.length || 0);
-      
       res.json(result);
     } catch (error) {
       console.error("Document parse error:", error);
@@ -84,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Information Extract endpoint
-  app.post("/api/information-extract", upload.single('document'), async (req, res) => {
+  app.post("/api/information-extrac", upload.single('document'), async (req, res) => {
     try {
       console.log("Information extract request received");
       
@@ -140,15 +155,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Upstage API response status:", response.status);
 
+      // Log raw response body for debugging
+      const responseBody = await response.text();
+      console.log("Upstage API raw response:", responseBody);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Upstage API error:", errorText);
-        throw new Error(`API request failed: ${response.status} - ${errorText}`);
+        console.error("Upstage API error:", response.status, responseBody);
+        return res.status(response.status).json({ 
+          error: "Upstage API request failed", 
+          details: responseBody || "No response body"
+        });
       }
 
-      const result = await response.json();
+      // Attempt to parse JSON
+      let result;
+      try {
+        result = JSON.parse(responseBody);
+      } catch (parseError) {
+        console.error("Failed to parse Upstage API response as JSON:", parseError);
+        return res.status(500).json({ 
+          error: "Invalid response from Upstage API", 
+          details: "Response is not valid JSON: " + responseBody
+        });
+      }
+
       console.log("Information extract successful");
-      
       res.json(result);
     } catch (error) {
       console.error("Information extract error:", error);
@@ -160,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Solar LLM Chat endpoint
-  app.post("/api/solar-chat", async (req, res) => {
+  app.post("/api/solar-cha", async (req, res) => {
     try {
       console.log("Solar LLM chat request received");
       
@@ -195,15 +226,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Upstage API response status:", response.status);
 
+      // Log raw response body for debugging
+      const responseBody = await response.text();
+      console.log("Upstage API raw response:", responseBody);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Upstage API error:", errorText);
-        throw new Error(`API request failed: ${response.status} - ${errorText}`);
+        console.error("Upstage API error:", response.status, responseBody);
+        return res.status(response.status).json({ 
+          error: "Upstage API request failed", 
+          details: responseBody || "No response body"
+        });
       }
 
-      const result = await response.json();
+      // Attempt to parse JSON
+      let result;
+      try {
+        result = JSON.parse(responseBody);
+      } catch (parseError) {
+        console.error("Failed to parse Upstage API response as JSON:", parseError);
+        return res.status(500).json({ 
+          error: "Invalid response from Upstage API", 
+          details: "Response is not valid JSON: " + responseBody
+        });
+      }
+
       console.log("Solar LLM chat successful");
-      
       res.json(result);
     } catch (error) {
       console.error("Solar LLM chat error:", error);
@@ -227,13 +274,3 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
-
-// Start the server
-async function startServer() {
-  const httpServer = await registerRoutes(app);
-  httpServer.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-  });
-}
-
-startServer();
