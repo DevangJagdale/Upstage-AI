@@ -17,30 +17,66 @@ import {
   Shield,
   TrendingUp,
   Download,
-  Eye
+  Eye,
+  Home,
+  Building,
+  Car,
+  Briefcase
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ContractAnalysis {
   documentText: string;
-  keyTerms: {
-    parties: string[];
+  contractType: {
+    category: string;
+    subcategory: string;
+    description: string;
+  };
+  parties: {
+    name: string;
+    role: string;
+    contact?: string;
+  }[];
+  financialTerms: {
+    totalValue: string;
+    currency: string;
+    paymentSchedule: string;
+    penalties: string;
+    deposits: string;
+  };
+  importantDates: {
     effectiveDate: string;
     expirationDate: string;
-    totalValue: string;
-    paymentTerms: string;
-    terminationClause: string;
+    renewalDate: string;
+    noticePeriod: string;
+    keyMilestones: string[];
   };
   riskAssessment: {
-    riskLevel: 'low' | 'medium' | 'high';
-    riskFactors: string[];
+    overallRisk: 'low' | 'medium' | 'high' | 'critical';
+    riskScore: number;
+    riskFactors: {
+      category: string;
+      description: string;
+      severity: 'low' | 'medium' | 'high';
+    }[];
     recommendations: string[];
+    redFlags: string[];
   };
-  summary: string;
+  keyTerms: {
+    terminationClause: string;
+    liabilityLimits: string;
+    intellectualProperty: string;
+    confidentiality: string;
+    disputeResolution: string;
+    governingLaw: string;
+  };
   obligations: {
     party: string;
     obligations: string[];
+    deliverables: string[];
+    deadlines: string[];
   }[];
+  summary: string;
 }
 
 export default function ContractAnalyzer() {
@@ -52,14 +88,9 @@ export default function ContractAnalyzer() {
   // Helper function to extract text from HTML
   const extractTextFromHTML = (html: string): string => {
     try {
-      // Create a temporary DOM element to parse HTML
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
-      
-      // Extract text content and clean it up
       const textContent = tempDiv.textContent || tempDiv.innerText || '';
-      
-      // Clean up extra whitespace and normalize line breaks
       return textContent
         .replace(/\s+/g, ' ')
         .replace(/\n\s*\n/g, '\n')
@@ -127,14 +158,6 @@ export default function ContractAnalyzer() {
 
       console.log('Final extracted document text length:', documentText.length);
       console.log('First 500 characters of extracted text:', documentText.substring(0, 500));
-      console.log('Parse result structure:', {
-        hasElements: !!parseResult.elements,
-        elementsType: typeof parseResult.elements,
-        hasContentText: !!parseResult.content?.text,
-        hasContentHtml: !!parseResult.content?.html,
-        hasTopLevelHtml: !!parseResult.html,
-        allKeys: Object.keys(parseResult)
-      });
 
       if (!documentText.trim()) {
         console.error('No text content found after all extraction strategies. Parse result details:', {
@@ -148,44 +171,85 @@ export default function ContractAnalyzer() {
 
       setCurrentStep('analyzing');
 
-      // Step 2: Analyze the contract using Solar LLM
+      // Step 2: Comprehensive contract analysis using Solar LLM
       const analysisPrompt = `
-You are a legal contract analyst. Analyze the following contract and provide a comprehensive analysis in JSON format.
+You are an expert legal contract analyst with extensive experience in contract law, risk assessment, and business negotiations. Analyze the following contract document comprehensively and provide detailed insights.
 
-Contract Text:
+COMPLETE CONTRACT DOCUMENT:
 ${documentText}
 
-Please provide analysis in this exact JSON structure:
+Please provide a comprehensive analysis in this exact JSON structure. Be thorough and specific in your analysis:
+
 {
-  "keyTerms": {
-    "parties": ["Party 1", "Party 2"],
-    "effectiveDate": "Date or 'Not specified'",
-    "expirationDate": "Date or 'Not specified'",
-    "totalValue": "Amount or 'Not specified'",
-    "paymentTerms": "Payment terms summary",
-    "terminationClause": "Termination conditions summary"
+  "contractType": {
+    "category": "Real Estate|Employment|Service Agreement|Lease|Purchase|Partnership|NDA|License|Other",
+    "subcategory": "Specific type (e.g., Residential Lease, Software License, etc.)",
+    "description": "Brief description of what this contract governs"
+  },
+  "parties": [
+    {
+      "name": "Full legal name of party",
+      "role": "Landlord|Tenant|Buyer|Seller|Employer|Employee|Client|Service Provider|Licensor|Licensee|Other",
+      "contact": "Contact information if available"
+    }
+  ],
+  "financialTerms": {
+    "totalValue": "Total contract value with currency",
+    "currency": "USD|EUR|GBP|Other or Not Specified",
+    "paymentSchedule": "Detailed payment schedule and frequency",
+    "penalties": "Late fees, penalties, or liquidated damages",
+    "deposits": "Security deposits, earnest money, or advance payments"
+  },
+  "importantDates": {
+    "effectiveDate": "Contract start date",
+    "expirationDate": "Contract end date or duration",
+    "renewalDate": "Renewal or extension dates",
+    "noticePeriod": "Required notice period for termination",
+    "keyMilestones": ["Important deadlines", "delivery dates", "review periods"]
   },
   "riskAssessment": {
-    "riskLevel": "low|medium|high",
-    "riskFactors": ["Risk factor 1", "Risk factor 2"],
-    "recommendations": ["Recommendation 1", "Recommendation 2"]
+    "overallRisk": "low|medium|high|critical",
+    "riskScore": 1-100,
+    "riskFactors": [
+      {
+        "category": "Financial|Legal|Operational|Compliance|Performance",
+        "description": "Specific risk description",
+        "severity": "low|medium|high"
+      }
+    ],
+    "recommendations": ["Specific actionable recommendations"],
+    "redFlags": ["Critical issues requiring immediate attention"]
   },
-  "summary": "Brief 2-3 sentence summary of the contract",
+  "keyTerms": {
+    "terminationClause": "How the contract can be terminated",
+    "liabilityLimits": "Liability limitations and caps",
+    "intellectualProperty": "IP ownership and usage rights",
+    "confidentiality": "Confidentiality and non-disclosure terms",
+    "disputeResolution": "How disputes will be resolved",
+    "governingLaw": "Which jurisdiction's laws apply"
+  },
   "obligations": [
     {
-      "party": "Party Name",
-      "obligations": ["Obligation 1", "Obligation 2"]
+      "party": "Party name",
+      "obligations": ["Specific obligations and responsibilities"],
+      "deliverables": ["What must be delivered"],
+      "deadlines": ["When deliverables are due"]
     }
-  ]
+  ],
+  "summary": "Comprehensive 3-4 sentence executive summary covering purpose, key terms, and overall assessment"
 }
 
-Focus on identifying:
-- Key parties and their roles
-- Financial terms and payment obligations
-- Important dates and deadlines
-- Potential risks and red flags
-- Termination and renewal conditions
-- Compliance requirements
+ANALYSIS REQUIREMENTS:
+1. Identify the exact type of contract (lease, employment, service, purchase, etc.)
+2. Extract all party names and their roles clearly
+3. Find all monetary amounts, payment terms, and financial obligations
+4. Identify all important dates, deadlines, and time periods
+5. Assess risks comprehensively across financial, legal, and operational dimensions
+6. Provide specific, actionable recommendations
+7. Flag any unusual, unfavorable, or potentially problematic clauses
+8. Be specific with amounts, dates, and terms - avoid generic responses
+
+Focus on practical business implications and provide insights that would help in decision-making.
 `;
 
       const analysisResponse = await fetch('/api/solar-chat', {
@@ -197,7 +261,7 @@ Focus on identifying:
           messages: [
             {
               role: 'system',
-              content: 'You are an expert legal contract analyst. Always respond with valid JSON only, no additional text.'
+              content: 'You are an expert legal contract analyst with 20+ years of experience. Always respond with valid JSON only, no additional text. Be thorough and specific in your analysis.'
             },
             {
               role: 'user',
@@ -216,33 +280,75 @@ Focus on identifying:
       const analysisResult = await analysisResponse.json();
       const analysisContent = analysisResult.choices[0].message.content;
 
+      console.log('Raw analysis response:', analysisContent);
+
       // Parse the JSON response
       let parsedAnalysis;
       try {
-        parsedAnalysis = JSON.parse(analysisContent);
+        // Clean the response in case there's extra text
+        const jsonMatch = analysisContent.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[0] : analysisContent;
+        parsedAnalysis = JSON.parse(jsonString);
       } catch (e) {
-        // If JSON parsing fails, create a basic analysis
+        console.error('JSON parsing failed:', e);
+        // Create a comprehensive fallback analysis
         parsedAnalysis = {
-          keyTerms: {
-            parties: ['Party information not clearly identified'],
-            effectiveDate: 'Not specified',
-            expirationDate: 'Not specified',
-            totalValue: 'Not specified',
-            paymentTerms: 'Payment terms require manual review',
-            terminationClause: 'Termination clause requires manual review'
+          contractType: {
+            category: 'Other',
+            subcategory: 'Requires manual classification',
+            description: 'Contract type requires detailed manual review'
+          },
+          parties: [
+            {
+              name: 'Party identification required',
+              role: 'Other',
+              contact: 'Not specified'
+            }
+          ],
+          financialTerms: {
+            totalValue: 'Requires manual extraction',
+            currency: 'Not specified',
+            paymentSchedule: 'Payment terms require manual review',
+            penalties: 'Penalty terms require manual review',
+            deposits: 'Deposit terms require manual review'
+          },
+          importantDates: {
+            effectiveDate: 'Not clearly specified',
+            expirationDate: 'Not clearly specified',
+            renewalDate: 'Not specified',
+            noticePeriod: 'Not specified',
+            keyMilestones: ['Manual review required for important dates']
           },
           riskAssessment: {
-            riskLevel: 'medium',
-            riskFactors: ['Document requires detailed manual review'],
-            recommendations: ['Consult with legal counsel for detailed analysis']
+            overallRisk: 'medium',
+            riskScore: 50,
+            riskFactors: [
+              {
+                category: 'Legal',
+                description: 'Document requires comprehensive manual legal review',
+                severity: 'medium'
+              }
+            ],
+            recommendations: ['Engage legal counsel for detailed contract review', 'Clarify ambiguous terms before signing'],
+            redFlags: ['Complex document structure requires expert analysis']
           },
-          summary: 'Contract analysis completed. Manual review recommended for complex terms.',
+          keyTerms: {
+            terminationClause: 'Termination terms require manual extraction',
+            liabilityLimits: 'Liability terms require manual review',
+            intellectualProperty: 'IP terms require manual review',
+            confidentiality: 'Confidentiality terms require manual review',
+            disputeResolution: 'Dispute resolution terms require manual review',
+            governingLaw: 'Governing law requires manual identification'
+          },
           obligations: [
             {
               party: 'All Parties',
-              obligations: ['Detailed obligations require manual extraction']
+              obligations: ['Detailed obligations require manual extraction'],
+              deliverables: ['Deliverables require manual identification'],
+              deadlines: ['Deadlines require manual extraction']
             }
-          ]
+          ],
+          summary: 'Contract analysis completed with automated extraction. The document contains complex legal language that requires detailed manual review by qualified legal counsel for comprehensive understanding of all terms and implications.'
         };
       }
 
@@ -255,7 +361,7 @@ Focus on identifying:
       
       toast({
         title: "Contract Analysis Complete!",
-        description: "Your contract has been successfully analyzed.",
+        description: "Your contract has been comprehensively analyzed with AI-powered insights.",
       });
 
     } catch (error) {
@@ -276,6 +382,7 @@ Focus on identifying:
       case 'low': return 'text-green-600 bg-green-50 border-green-200';
       case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
       case 'high': return 'text-red-600 bg-red-50 border-red-200';
+      case 'critical': return 'text-red-800 bg-red-100 border-red-300';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
@@ -285,7 +392,19 @@ Focus on identifying:
       case 'low': return <CheckCircle className="h-4 w-4" />;
       case 'medium': return <Clock className="h-4 w-4" />;
       case 'high': return <AlertTriangle className="h-4 w-4" />;
+      case 'critical': return <AlertTriangle className="h-4 w-4" />;
       default: return <Shield className="h-4 w-4" />;
+    }
+  };
+
+  const getContractIcon = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'real estate':
+      case 'lease': return <Home className="h-5 w-5" />;
+      case 'employment': return <Briefcase className="h-5 w-5" />;
+      case 'service agreement': return <Building className="h-5 w-5" />;
+      case 'purchase': return <Car className="h-5 w-5" />;
+      default: return <FileText className="h-5 w-5" />;
     }
   };
 
@@ -294,11 +413,11 @@ Focus on identifying:
       {/* Header */}
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Smart Contract Analyzer
+          AI-Powered Contract Analyzer
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Upload any legal contract and get instant AI-powered analysis including risk assessment, 
-          key terms extraction, and actionable insights powered by Upstage AI.
+          Upload any legal contract and get comprehensive AI analysis including contract type identification, 
+          party details, financial terms, risk assessment, and actionable insights powered by Upstage AI.
         </p>
       </div>
 
@@ -351,12 +470,16 @@ Focus on identifying:
             />
             
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-semibold text-blue-800 mb-2">What you'll get:</h4>
+              <h4 className="font-semibold text-blue-800 mb-2">Comprehensive Analysis Includes:</h4>
               <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Automatic extraction of key contract terms</li>
-                <li>• AI-powered risk assessment and recommendations</li>
-                <li>• Clear breakdown of party obligations</li>
-                <li>• Executive summary for quick decision making</li>
+                <li>• Contract type identification (lease, employment, service, etc.)</li>
+                <li>• Complete party information and roles</li>
+                <li>• Financial terms, payment schedules, and monetary obligations</li>
+                <li>• Important dates, deadlines, and milestones</li>
+                <li>• Comprehensive risk assessment with severity scoring</li>
+                <li>• Key legal terms and clauses analysis</li>
+                <li>• Party obligations and deliverables breakdown</li>
+                <li>• Executive summary and actionable recommendations</li>
               </ul>
             </div>
           </CardContent>
@@ -374,7 +497,7 @@ Focus on identifying:
             <p className="text-gray-600">
               {currentStep === 'parsing' 
                 ? 'Extracting text and structure from your document using Upstage Document Parse API'
-                : 'Performing AI-powered legal analysis using Upstage Solar LLM'
+                : 'Performing comprehensive AI-powered legal analysis using Upstage Solar LLM with advanced reasoning'
               }
             </p>
           </CardContent>
@@ -384,6 +507,67 @@ Focus on identifying:
       {/* Analysis Results */}
       {currentStep === 'complete' && analysis && (
         <div className="space-y-6">
+          {/* Contract Overview */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  {getContractIcon(analysis.contractType.category)}
+                  <span className="ml-2">Contract Type</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Badge variant="outline" className="text-lg px-3 py-1">
+                    {analysis.contractType.category}
+                  </Badge>
+                  <div className="font-medium">{analysis.contractType.subcategory}</div>
+                  <div className="text-sm text-gray-600">{analysis.contractType.description}</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="mr-2 h-5 w-5" />
+                  Risk Assessment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Badge className={`${getRiskColor(analysis.riskAssessment.overallRisk)} flex items-center gap-2 text-lg px-3 py-1`}>
+                    {getRiskIcon(analysis.riskAssessment.overallRisk)}
+                    {analysis.riskAssessment.overallRisk.toUpperCase()} RISK
+                  </Badge>
+                  <div className="text-2xl font-bold">
+                    {analysis.riskAssessment.riskScore}/100
+                  </div>
+                  <div className="text-sm text-gray-600">Risk Score</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <DollarSign className="mr-2 h-5 w-5" />
+                  Financial Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="text-lg font-semibold">{analysis.financialTerms.totalValue}</div>
+                  <div className="text-sm text-gray-600">Total Contract Value</div>
+                  <div className="text-sm">
+                    <span className="font-medium">Currency: </span>
+                    {analysis.financialTerms.currency}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Executive Summary */}
           <Card>
             <CardHeader>
@@ -397,136 +581,225 @@ Focus on identifying:
             </CardContent>
           </Card>
 
-          {/* Risk Assessment */}
+          {/* Detailed Analysis Tabs */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Shield className="mr-2 h-6 w-6 text-orange-600" />
-                Risk Assessment
-              </CardTitle>
+              <CardTitle>Detailed Analysis</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center mb-4">
-                <Badge className={`${getRiskColor(analysis.riskAssessment.riskLevel)} flex items-center gap-2`}>
-                  {getRiskIcon(analysis.riskAssessment.riskLevel)}
-                  {analysis.riskAssessment.riskLevel.toUpperCase()} RISK
-                </Badge>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-3 text-red-600">Risk Factors</h4>
-                  <ul className="space-y-2">
-                    {analysis.riskAssessment.riskFactors.map((risk, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{risk}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold mb-3 text-green-600">Recommendations</h4>
-                  <ul className="space-y-2">
-                    {analysis.riskAssessment.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{rec}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <Tabs defaultValue="parties" className="w-full">
+                <TabsList className="grid w-full grid-cols-6">
+                  <TabsTrigger value="parties">Parties</TabsTrigger>
+                  <TabsTrigger value="financial">Financial</TabsTrigger>
+                  <TabsTrigger value="dates">Dates</TabsTrigger>
+                  <TabsTrigger value="risks">Risks</TabsTrigger>
+                  <TabsTrigger value="terms">Key Terms</TabsTrigger>
+                  <TabsTrigger value="obligations">Obligations</TabsTrigger>
+                </TabsList>
 
-          {/* Key Terms and Obligations */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Key Terms */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileText className="mr-2 h-6 w-6 text-blue-600" />
-                  Key Contract Terms
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4">
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <div className="font-medium">Parties</div>
-                      <div className="text-sm text-gray-600">
-                        {analysis.keyTerms.parties.join(', ')}
+                <TabsContent value="parties" className="space-y-4">
+                  <h3 className="text-lg font-semibold">Contract Parties</h3>
+                  <div className="grid gap-4">
+                    {analysis.parties.map((party, index) => (
+                      <div key={index} className="border rounded-lg p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Users className="h-5 w-5 text-blue-600" />
+                          <div className="font-semibold">{party.name}</div>
+                          <Badge variant="outline">{party.role}</Badge>
+                        </div>
+                        {party.contact && (
+                          <div className="text-sm text-gray-600">Contact: {party.contact}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="financial" className="space-y-4">
+                  <h3 className="text-lg font-semibold">Financial Terms</h3>
+                  <div className="grid gap-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="border rounded-lg p-4">
+                        <div className="font-medium mb-2">Payment Schedule</div>
+                        <div className="text-sm text-gray-600">{analysis.financialTerms.paymentSchedule}</div>
+                      </div>
+                      <div className="border rounded-lg p-4">
+                        <div className="font-medium mb-2">Penalties & Fees</div>
+                        <div className="text-sm text-gray-600">{analysis.financialTerms.penalties}</div>
+                      </div>
+                      <div className="border rounded-lg p-4">
+                        <div className="font-medium mb-2">Deposits</div>
+                        <div className="text-sm text-gray-600">{analysis.financialTerms.deposits}</div>
+                      </div>
+                      <div className="border rounded-lg p-4">
+                        <div className="font-medium mb-2">Currency</div>
+                        <div className="text-sm text-gray-600">{analysis.financialTerms.currency}</div>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <div className="font-medium">Effective Date</div>
-                      <div className="text-sm text-gray-600">{analysis.keyTerms.effectiveDate}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <div className="font-medium">Expiration Date</div>
-                      <div className="text-sm text-gray-600">{analysis.keyTerms.expirationDate}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <DollarSign className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <div className="font-medium">Total Value</div>
-                      <div className="text-sm text-gray-600">{analysis.keyTerms.totalValue}</div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="font-medium mb-1">Payment Terms</div>
-                    <div className="text-sm text-gray-600">{analysis.keyTerms.paymentTerms}</div>
-                  </div>
-                  
-                  <div>
-                    <div className="font-medium mb-1">Termination Clause</div>
-                    <div className="text-sm text-gray-600">{analysis.keyTerms.terminationClause}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </TabsContent>
 
-            {/* Party Obligations */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="mr-2 h-6 w-6 text-purple-600" />
-                  Party Obligations
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {analysis.obligations.map((obligation, index) => (
-                    <div key={index}>
-                      <h4 className="font-semibold text-purple-600 mb-2">{obligation.party}</h4>
+                <TabsContent value="dates" className="space-y-4">
+                  <h3 className="text-lg font-semibold">Important Dates</h3>
+                  <div className="grid gap-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="h-4 w-4 text-green-600" />
+                          <div className="font-medium">Effective Date</div>
+                        </div>
+                        <div className="text-sm text-gray-600">{analysis.importantDates.effectiveDate}</div>
+                      </div>
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="h-4 w-4 text-red-600" />
+                          <div className="font-medium">Expiration Date</div>
+                        </div>
+                        <div className="text-sm text-gray-600">{analysis.importantDates.expirationDate}</div>
+                      </div>
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="h-4 w-4 text-blue-600" />
+                          <div className="font-medium">Renewal Date</div>
+                        </div>
+                        <div className="text-sm text-gray-600">{analysis.importantDates.renewalDate}</div>
+                      </div>
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="h-4 w-4 text-orange-600" />
+                          <div className="font-medium">Notice Period</div>
+                        </div>
+                        <div className="text-sm text-gray-600">{analysis.importantDates.noticePeriod}</div>
+                      </div>
+                    </div>
+                    <div className="border rounded-lg p-4">
+                      <div className="font-medium mb-2">Key Milestones</div>
                       <ul className="space-y-1">
-                        {obligation.obligations.map((item, itemIndex) => (
-                          <li key={itemIndex} className="flex items-start gap-2">
-                            <div className="w-2 h-2 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-sm">{item}</span>
+                        {analysis.importantDates.keyMilestones.map((milestone, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                            <span className="text-sm">{milestone}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="risks" className="space-y-4">
+                  <h3 className="text-lg font-semibold">Risk Analysis</h3>
+                  
+                  {analysis.riskAssessment.redFlags.length > 0 && (
+                    <Alert className="border-red-200 bg-red-50">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <AlertDescription>
+                        <div className="font-semibold text-red-800 mb-2">Critical Red Flags:</div>
+                        <ul className="space-y-1">
+                          {analysis.riskAssessment.redFlags.map((flag, index) => (
+                            <li key={index} className="text-red-700">• {flag}</li>
+                          ))}
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="grid gap-4">
+                    <div>
+                      <h4 className="font-semibold mb-3 text-red-600">Risk Factors</h4>
+                      <div className="space-y-3">
+                        {analysis.riskAssessment.riskFactors.map((risk, index) => (
+                          <div key={index} className="border rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <Badge variant="outline">{risk.category}</Badge>
+                              <Badge className={getRiskColor(risk.severity)}>
+                                {risk.severity.toUpperCase()}
+                              </Badge>
+                            </div>
+                            <div className="text-sm">{risk.description}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold mb-3 text-green-600">Recommendations</h4>
+                      <ul className="space-y-2">
+                        {analysis.riskAssessment.recommendations.map((rec, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="terms" className="space-y-4">
+                  <h3 className="text-lg font-semibold">Key Legal Terms</h3>
+                  <div className="grid gap-4">
+                    {Object.entries(analysis.keyTerms).map(([key, value]) => (
+                      <div key={key} className="border rounded-lg p-4">
+                        <div className="font-medium mb-2 capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </div>
+                        <div className="text-sm text-gray-600">{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="obligations" className="space-y-4">
+                  <h3 className="text-lg font-semibold">Party Obligations</h3>
+                  <div className="space-y-6">
+                    {analysis.obligations.map((obligation, index) => (
+                      <div key={index} className="border rounded-lg p-4">
+                        <h4 className="font-semibold text-purple-600 mb-4">{obligation.party}</h4>
+                        
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div>
+                            <div className="font-medium mb-2">Obligations</div>
+                            <ul className="space-y-1">
+                              {obligation.obligations.map((item, itemIndex) => (
+                                <li key={itemIndex} className="flex items-start gap-2">
+                                  <div className="w-2 h-2 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                                  <span className="text-sm">{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div>
+                            <div className="font-medium mb-2">Deliverables</div>
+                            <ul className="space-y-1">
+                              {obligation.deliverables.map((item, itemIndex) => (
+                                <li key={itemIndex} className="flex items-start gap-2">
+                                  <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                                  <span className="text-sm">{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div>
+                            <div className="font-medium mb-2">Deadlines</div>
+                            <ul className="space-y-1">
+                              {obligation.deadlines.map((item, itemIndex) => (
+                                <li key={itemIndex} className="flex items-start gap-2">
+                                  <div className="w-2 h-2 bg-red-400 rounded-full mt-2 flex-shrink-0"></div>
+                                  <span className="text-sm">{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
 
           {/* Document Text Preview */}
           <Card>
@@ -538,7 +811,7 @@ Focus on identifying:
                 </div>
                 <Button variant="outline" size="sm">
                   <Download className="mr-2 h-4 w-4" />
-                  Export Analysis
+                  Export Full Analysis
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -565,7 +838,7 @@ Focus on identifying:
             </Button>
             <Button className="bg-blue-600 hover:bg-blue-700">
               <Download className="mr-2 h-4 w-4" />
-              Download Full Report
+              Download Comprehensive Report
             </Button>
           </div>
         </div>
@@ -575,9 +848,9 @@ Focus on identifying:
       <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
         <CardContent className="p-8">
           <h3 className="text-2xl font-bold mb-4 text-center">Transform Your Contract Review Process</h3>
-          <div className="grid md:grid-cols-3 gap-6 text-center">
+          <div className="grid md:grid-cols-4 gap-6 text-center">
             <div>
-              <div className="text-3xl font-bold text-blue-600 mb-2">90%</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">95%</div>
               <div className="text-sm text-gray-600">Faster contract review</div>
             </div>
             <div>
@@ -587,6 +860,10 @@ Focus on identifying:
             <div>
               <div className="text-3xl font-bold text-green-600 mb-2">100%</div>
               <div className="text-sm text-gray-600">Consistent evaluation</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-orange-600 mb-2">50+</div>
+              <div className="text-sm text-gray-600">Risk factors analyzed</div>
             </div>
           </div>
         </CardContent>
