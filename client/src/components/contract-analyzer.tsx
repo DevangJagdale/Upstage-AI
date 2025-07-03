@@ -126,7 +126,6 @@ export default function ContractAnalyzer() {
 
       // const parseResult = await parseResponse.json();
       // console.log('Document Parse API Result:', parseResult);
-      const text = await response.text();
 
       let parseResult;
       try {
