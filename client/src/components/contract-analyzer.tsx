@@ -128,13 +128,16 @@ export default function ContractAnalyzer() {
       // console.log('Document Parse API Result:', parseResult);
       const text = await response.text();
 
+      let parseResult;
       try {
-        const parseResult = JSON.parse(text);
-        res.status(response.status).json(parseResult);
-      } catch (e) {
-        console.warn("Upstage response was not JSON:", text);
-        res.status(response.status).json({ raw: text });
+        parseResult = await parseResponse.json();
+        console.log('Document Parse API Result:', parseResult);
+      } catch (err) {
+        const errorText = await parseResponse.text();
+        console.error('Failed to parse JSON from response:', errorText);
+        throw new Error('Invalid JSON response from document-parse API');
       }
+
 
       
       // Extract text content from parsed result with multiple fallback strategies
