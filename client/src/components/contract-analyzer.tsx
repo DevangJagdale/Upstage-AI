@@ -26,7 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://upstage-ai.onrender.com' 
+  ? 'https://upstage-ai-demoserver.onrender.com' 
   : 'http://localhost:8000';
 
 interface ContractAnalysis {
