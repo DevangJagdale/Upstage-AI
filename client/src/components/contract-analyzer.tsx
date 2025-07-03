@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import FileUpload from "./file-upload";
 import { 
@@ -85,7 +85,6 @@ export default function ContractAnalyzer() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'parsing' | 'analyzing' | 'complete'>('upload');
   const { toast } = useToast();
 
-  // Helper function to extract text from HTML
   const extractTextFromHTML = (html: string): string => {
     try {
       const tempDiv = document.createElement('div');
@@ -107,7 +106,6 @@ export default function ContractAnalyzer() {
     setAnalysis(null);
 
     try {
-      // Step 1: Parse the document using Document Parse API
       console.log('Starting document parse for file:', file.name, 'Size:', file.size, 'Type:', file.type);
       
       const formData = new FormData();
@@ -119,13 +117,6 @@ export default function ContractAnalyzer() {
       });
 
       console.log('Document Parse API Response Status:', parseResponse.status, parseResponse.statusText);
-
-      if (!parseResponse.ok) {
-        throw new Error('Failed to parse document');
-      }
-
-      // const parseResult = await parseResponse.json();
-      // console.log('Document Parse API Result:', parseResult);
 
       const responseText = await parseResponse.text();
       console.log('Raw API Response:', responseText);
@@ -144,13 +135,7 @@ export default function ContractAnalyzer() {
         throw new Error('Invalid JSON in API response');
       }
 
-
-
-      
-      // Extract text content from parsed result with multiple fallback strategies
       let documentText = '';
-
-      // Strategy 1: Try to extract from elements array
       if (parseResult.elements && Array.isArray(parseResult.elements)) {
         documentText = parseResult.elements
           .map((element: any) => element.content?.text || '')
@@ -158,19 +143,16 @@ export default function ContractAnalyzer() {
         console.log('Extracted text from elements array, length:', documentText.length);
       }
 
-      // Strategy 2: Try to extract from content.text
       if (!documentText.trim() && parseResult.content?.text) {
         documentText = parseResult.content.text;
         console.log('Extracted text from content.text, length:', documentText.length);
       }
 
-      // Strategy 3: Try to extract from content.html
       if (!documentText.trim() && parseResult.content?.html) {
         documentText = extractTextFromHTML(parseResult.content.html);
         console.log('Extracted text from content.html, length:', documentText.length);
       }
 
-      // Strategy 4: Try to extract from top-level html property
       if (!documentText.trim() && parseResult.html) {
         documentText = extractTextFromHTML(parseResult.html);
         console.log('Extracted text from top-level html, length:', documentText.length);
@@ -191,14 +173,13 @@ export default function ContractAnalyzer() {
 
       setCurrentStep('analyzing');
 
-      // Step 2: Comprehensive contract analysis using Solar LLM
       const analysisPrompt = `
 You are an expert legal contract analyst with extensive experience in contract law, risk assessment, and business negotiations. Analyze the following contract document comprehensively and provide detailed insights.
 
-COMPLETE CONTRACT DOCUMENT:
+// COMPLETE CONTRACT DOCUMENT:
 ${documentText}
 
-Please provide a comprehensive analysis in this exact JSON structure. Be thorough and specific in your analysis:
+// Please provide a comprehensive analysis in this exact JSON structure. Be thorough and specific in your analysis:
 
 {
   "contractType": {
@@ -259,17 +240,17 @@ Please provide a comprehensive analysis in this exact JSON structure. Be thoroug
   "summary": "Comprehensive 3-4 sentence executive summary covering purpose, key terms, and overall assessment"
 }
 
-ANALYSIS REQUIREMENTS:
-1. Identify the exact type of contract (lease, employment, service, purchase, etc.)
-2. Extract all party names and their roles clearly
-3. Find all monetary amounts, payment terms, and financial obligations
-4. Identify all important dates, deadlines, and time periods
-5. Assess risks comprehensively across financial, legal, and operational dimensions
-6. Provide specific, actionable recommendations
-7. Flag any unusual, unfavorable, or potentially problematic clauses
-8. Be specific with amounts, dates, and terms - avoid generic responses
+// ANALYSIS REQUIREMENTS:
+// 1. Identify the exact type of contract (lease, employment, service, purchase, etc.)
+// 2. Extract all party names and their roles clearly
+// 3. Find all monetary amounts, payment terms, and financial obligations
+// 4. Identify all important dates, deadlines, and time periods
+// 5. Assess risks comprehensively across financial, legal, and operational dimensions
+// 6. Provide specific, actionable recommendations
+// 7. Flag any unusual, unfavorable, or potentially problematic clauses
+// 8. Be specific with amounts, dates, and terms - avoid generic responses
 
-Focus on practical business implications and provide insights that would help in decision-making.
+// Focus on practical business implications and provide insights that would help in decision-making.
 `;
 
       const analysisResponse = await fetch('/api/solar-chat', {
@@ -302,16 +283,13 @@ Focus on practical business implications and provide insights that would help in
 
       console.log('Raw analysis response:', analysisContent);
 
-      // Parse the JSON response
       let parsedAnalysis;
       try {
-        // Clean the response in case there's extra text
         const jsonMatch = analysisContent.match(/\{[\s\S]*\}/);
         const jsonString = jsonMatch ? jsonMatch[0] : analysisContent;
         parsedAnalysis = JSON.parse(jsonString);
       } catch (e) {
         console.error('JSON parsing failed:', e);
-        // Create a comprehensive fallback analysis
         parsedAnalysis = {
           contractType: {
             category: 'Other',
@@ -430,18 +408,16 @@ Focus on practical business implications and provide insights that would help in
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
-      {/* Header */}
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           AI-Powered Contract Analyzer
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
           Upload any legal contract and get comprehensive AI analysis including contract type identification, 
-          party details, financial terms, risk assessment, and actionable insights powered by Upstage AI.
+          party details, financial terms, risk assessment, and actionable insights.
         </p>
       </div>
 
-      {/* Process Steps */}
       <div className="flex justify-center">
         <div className="flex items-center space-x-4">
           {[
@@ -471,7 +447,6 @@ Focus on practical business implications and provide insights that would help in
         </div>
       </div>
 
-      {/* Upload Section */}
       {currentStep === 'upload' && (
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
@@ -506,7 +481,6 @@ Focus on practical business implications and provide insights that would help in
         </Card>
       )}
 
-      {/* Processing States */}
       {(currentStep === 'parsing' || currentStep === 'analyzing') && (
         <Card className="max-w-2xl mx-auto">
           <CardContent className="p-8 text-center">
@@ -516,18 +490,16 @@ Focus on practical business implications and provide insights that would help in
             </h3>
             <p className="text-gray-600">
               {currentStep === 'parsing' 
-                ? 'Extracting text and structure from your document using Upstage Document Parse API'
-                : 'Performing comprehensive AI-powered legal analysis using Upstage Solar LLM with advanced reasoning'
+                ? 'Extracting text and structure from your document'
+                : 'Performing comprehensive AI-powered legal analysis'
               }
             </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Analysis Results */}
       {currentStep === 'complete' && analysis && (
         <div className="space-y-6">
-          {/* Contract Overview */}
           <div className="grid lg:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
@@ -588,7 +560,6 @@ Focus on practical business implications and provide insights that would help in
             </Card>
           </div>
 
-          {/* Executive Summary */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -601,7 +572,6 @@ Focus on practical business implications and provide insights that would help in
             </CardContent>
           </Card>
 
-          {/* Detailed Analysis Tabs */}
           <Card>
             <CardHeader>
               <CardTitle>Detailed Analysis</CardTitle>
@@ -610,7 +580,6 @@ Focus on practical business implications and provide insights that would help in
               <Tabs defaultValue="parties" className="w-full">
                 <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="parties">Parties</TabsTrigger>
-                  {/* <TabsTrigger value="financial">Financial</TabsTrigger> */}
                   <TabsTrigger value="dates">Dates</TabsTrigger>
                   <TabsTrigger value="risks">Risks</TabsTrigger>
                   <TabsTrigger value="terms">Key Terms</TabsTrigger>
@@ -632,30 +601,6 @@ Focus on practical business implications and provide insights that would help in
                         )}
                       </div>
                     ))}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="financial" className="space-y-4">
-                  <h3 className="text-lg font-semibold">Financial Terms</h3>
-                  <div className="grid gap-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="border rounded-lg p-4">
-                        <div className="font-medium mb-2">Payment Schedule</div>
-                        <div className="text-sm text-gray-600">{analysis.financialTerms.paymentSchedule}</div>
-                      </div>
-                      <div className="border rounded-lg p-4">
-                        <div className="font-medium mb-2">Penalties & Fees</div>
-                        <div className="text-sm text-gray-600">{analysis.financialTerms.penalties}</div>
-                      </div>
-                      <div className="border rounded-lg p-4">
-                        <div className="font-medium mb-2">Deposits</div>
-                        <div className="text-sm text-gray-600">{analysis.financialTerms.deposits}</div>
-                      </div>
-                      <div className="border rounded-lg p-4">
-                        <div className="font-medium mb-2">Currency</div>
-                        <div className="text-sm text-gray-600">{analysis.financialTerms.currency}</div>
-                      </div>
-                    </div>
                   </div>
                 </TabsContent>
 
@@ -722,6 +667,30 @@ Focus on practical business implications and provide insights that would help in
                       </AlertDescription>
                     </Alert>
                   )}
+
+  <TabsContent value="financial" className="space-y-4">
+    <h3 className="text-lg font-semibold">Financial Terms</h3>
+    <div className="grid gap-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="border rounded-lg p-4">
+          <div className="font-medium mb-2">Payment Schedule</div>
+          <div className="text-sm text-gray-600">{analysis.financialTerms.paymentSchedule}</div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="font-medium mb-2">Penalties & Fees</div>
+          <div className="text-sm text-gray-600">{analysis.financialTerms.penalties}</div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="font-medium mb-2">Deposits</div>
+          <div className="text-sm text-gray-600">{analysis.financialTerms.deposits}</div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="font-medium mb-2">Currency</div>
+          <div className="text-sm text-gray-600">{analysis.financialTerms.currency}</div>
+        </div>
+      </div>
+    </div>
+  </TabsContent>
 
                   <div className="grid gap-4">
                     <div>
@@ -821,7 +790,6 @@ Focus on practical business implications and provide insights that would help in
             </CardContent>
           </Card>
 
-          {/* Document Text Preview */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -845,7 +813,6 @@ Focus on practical business implications and provide insights that would help in
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
           <div className="flex justify-center gap-4">
             <Button 
               onClick={() => {
@@ -860,7 +827,6 @@ Focus on practical business implications and provide insights that would help in
         </div>
       )}
 
-      {/* Business Value Proposition */}
       <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
         <CardContent className="p-8">
           <h3 className="text-2xl font-bold mb-4 text-center">Transform Your Contract Review Process</h3>
