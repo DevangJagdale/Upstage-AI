@@ -111,27 +111,50 @@ export default function ContractAnalyzer() {
       const formData = new FormData();
       formData.append('document', file);
 
-      const parseResponse = await fetch('/api/document-parse', {
+      // Directly call Upstage Document Parse API
+      const upstageApiKey = process.env.NEXT_PUBLIC_UPSTAGE_API_KEY; // WARNING: Not secure for production
+      if (!upstageApiKey) {
+        console.error('UPSTAGE_API_KEY is not set');
+        throw new Error('Upstage API key is not configured');
+      }
+
+      const parseResponse = await fetch('https://api.upstage.ai/v1/document-parse', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${upstageApiKey}`,
+        },
         body: formData,
       });
 
-      console.log('Document Parse API Response Status:', parseResponse.status, parseResponse.statusText);
-
+      console.log('Upstage API Response Status:', parseResponse.status, parseResponse.statusText);
       const responseText = await parseResponse.text();
       console.log('Raw API Response:', responseText);
-      
+
+      // Show raw response in toast for debugging
+      toast({
+        title: "API Response Debug",
+        description: `Raw response: ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}`,
+        variant: "default",
+        duration: 10000,
+      });
+
       if (!parseResponse.ok) {
-        console.error('Document Parse API Error Response:', responseText);
-        throw new Error(`Document Parse API failed with status ${parseResponse.status}`);
+        console.error('Upstage API Error Response:', responseText);
+        throw new Error(`Upstage API failed with status ${parseResponse.status}: ${responseText.substring(0, 200)}`);
       }
-      
+
       let parseResult;
       try {
         parseResult = JSON.parse(responseText);
-        console.log('Document Parse API Result:', parseResult);
+        console.log('Upstage API Result:', parseResult);
       } catch (err) {
         console.error('Failed to parse JSON from response. Raw response was:', responseText);
+        toast({
+          title: "JSON Parse Error",
+          description: `Failed to parse API response. Raw response: ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}`,
+          variant: "destructive",
+          duration: 10000,
+        });
         throw new Error('Invalid JSON in API response');
       }
 
@@ -275,7 +298,8 @@ ${documentText}
       });
 
       if (!analysisResponse.ok) {
-        throw new Error('Failed to analyze contract');
+        console.error('Solar Chat API Error Response:', await analysisResponse.text());
+        throw new Error(`Failed to analyze contract: ${analysisResponse.status}`);
       }
 
       const analysisResult = await analysisResponse.json();
@@ -289,7 +313,13 @@ ${documentText}
         const jsonString = jsonMatch ? jsonMatch[0] : analysisContent;
         parsedAnalysis = JSON.parse(jsonString);
       } catch (e) {
-        console.error('JSON parsing failed:', e);
+        console.error('JSON parsing failed for analysis response:', e);
+        toast({
+          title: "Analysis JSON Parse Error",
+          description: `Failed to parse analysis response. Raw response: ${analysisContent.substring(0, 200)}${analysisContent.length > 200 ? '...' : ''}`,
+          variant: "destructive",
+          duration: 10000,
+        });
         parsedAnalysis = {
           contractType: {
             category: 'Other',
@@ -395,8 +425,8 @@ ${documentText}
     }
   };
 
-  const getContractIcon = (category: string) => {
-    switch (category.toLowerCase()) {
+  const getContractIcon = (level: string) => {
+    switch (level.toLowerCase()) {
       case 'real estate':
       case 'lease': return <Home className="h-5 w-5" />;
       case 'employment': return <Briefcase className="h-5 w-5" />;
@@ -653,83 +683,55 @@ ${documentText}
 
                 <TabsContent value="risks" className="space-y-4">
                   <h3 className="text-lg font-semibold">Risk Analysis</h3>
-                  
                   {analysis.riskAssessment.redFlags.length > 0 && (
                     <Alert className="border-red-200 bg-red-50">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                       <AlertDescription>
-                        <div className="font-semibold text-red-800 mb-2">Critical Red Flags:</div>
+                        <div className="font-medium mb-2">Red Flags</div>
                         <ul className="space-y-1">
                           {analysis.riskAssessment.redFlags.map((flag, index) => (
-                            <li key={index} className="text-red-700">• {flag}</li>
+                            <li key={index} className="flex items-start gap-2">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-sm">{flag}</span>
+                            </li>
                           ))}
                         </ul>
                       </AlertDescription>
                     </Alert>
                   )}
-
-  <TabsContent value="financial" className="space-y-4">
-    <h3 className="text-lg font-semibold">Financial Terms</h3>
-    <div className="grid gap-4">
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="border rounded-lg p-4">
-          <div className="font-medium mb-2">Payment Schedule</div>
-          <div className="text-sm text-gray-600">{analysis.financialTerms.paymentSchedule}</div>
-        </div>
-        <div className="border rounded-lg p-4">
-          <div className="font-medium mb-2">Penalties & Fees</div>
-          <div className="text-sm text-gray-600">{analysis.financialTerms.penalties}</div>
-        </div>
-        <div className="border rounded-lg p-4">
-          <div className="font-medium mb-2">Deposits</div>
-          <div className="text-sm text-gray-600">{analysis.financialTerms.deposits}</div>
-        </div>
-        <div className="border rounded-lg p-4">
-          <div className="font-medium mb-2">Currency</div>
-          <div className="text-sm text-gray-600">{analysis.financialTerms.currency}</div>
-        </div>
-      </div>
-    </div>
-  </TabsContent>
-
-                  <div className="grid gap-4">
-                    <div>
-                      <h4 className="font-semibold mb-3 text-red-600">Risk Factors</h4>
-                      <div className="space-y-3">
-                        {analysis.riskAssessment.riskFactors.map((risk, index) => (
-                          <div key={index} className="border rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <Badge variant="outline">{risk.category}</Badge>
-                              <Badge className={getRiskColor(risk.severity)}>
-                                {risk.severity.toUpperCase()}
-                              </Badge>
-                            </div>
-                            <div className="text-sm">{risk.description}</div>
-                          </div>
-                        ))}
+                  <div className="space-y-4">
+                    {analysis.riskAssessment.riskFactors.map((factor, index) => (
+                      <div key={index} className="border rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          {getRiskIcon(factor.severity)}
+                          <div className="font-medium">{factor.category}</div>
+                          <Badge className={getRiskColor(factor.severity)}>
+                            {factor.severity.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-gray-600">{factor.description}</div>
                       </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-semibold mb-3 text-green-600">Recommendations</h4>
-                      <ul className="space-y-2">
-                        {analysis.riskAssessment.recommendations.map((rec, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    ))}
+                  </div>
+                  <div className="border rounded-lg p-4">
+                    <div className="font-medium mb-2">Recommendations</div>
+                    <ul className="space-y-1">
+                      {analysis.riskAssessment.recommendations.map((recommendation, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                          <span className="text-sm">{recommendation}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="terms" className="space-y-4">
-                  <h3 className="text-lg font-semibold">Key Legal Terms</h3>
+                  <h3 className="text-lg font-semibold">Key Terms</h3>
                   <div className="grid gap-4">
-                    {Object.entries(analysis.keyTerms).map(([key, value]) => (
-                      <div key={key} className="border rounded-lg p-4">
-                        <div className="font-medium mb-2 capitalize">
+                    {Object.entries(analysis.keyTerms).map(([key, value], index) => (
+                      <div key={index} className="border rounded-lg p-4">
+                        <div className="font-medium capitalize mb-2">
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </div>
                         <div className="text-sm text-gray-600">{value}</div>
@@ -739,52 +741,50 @@ ${documentText}
                 </TabsContent>
 
                 <TabsContent value="obligations" className="space-y-4">
-                  <h3 className="text-lg font-semibold">Party Obligations</h3>
-                  <div className="space-y-6">
-                    {analysis.obligations.map((obligation, index) => (
-                      <div key={index} className="border rounded-lg p-4">
-                        <h4 className="font-semibold text-purple-600 mb-4">{obligation.party}</h4>
-                        
-                        <div className="grid md:grid-cols-3 gap-4">
-                          <div>
-                            <div className="font-medium mb-2">Obligations</div>
-                            <ul className="space-y-1">
-                              {obligation.obligations.map((item, itemIndex) => (
-                                <li key={itemIndex} className="flex items-start gap-2">
-                                  <div className="w-2 h-2 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
-                                  <span className="text-sm">{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          
-                          <div>
-                            <div className="font-medium mb-2">Deliverables</div>
-                            <ul className="space-y-1">
-                              {obligation.deliverables.map((item, itemIndex) => (
-                                <li key={itemIndex} className="flex items-start gap-2">
-                                  <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                                  <span className="text-sm">{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          
-                          <div>
-                            <div className="font-medium mb-2">Deadlines</div>
-                            <ul className="space-y-1">
-                              {obligation.deadlines.map((item, itemIndex) => (
-                                <li key={itemIndex} className="flex items-start gap-2">
-                                  <div className="w-2 h-2 bg-red-400 rounded-full mt-2 flex-shrink-0"></div>
-                                  <span className="text-sm">{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
+                  <h3 className="text-lg font-semibold">Obligations & Deliverables</h3>
+                  {analysis.obligations.map((obligation, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="h-4 w-4 text-blue-600" />
+                        <div className="font-medium">{obligation.party}</div>
+                      </div>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div>
+                          <div className="font-medium mb-2">Obligations</div>
+                          <ul className="space-y-1">
+                            {obligation.obligations.map((item, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                                <span className="text-sm">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <div className="font-medium mb-2">Deliverables</div>
+                          <ul className="space-y-1">
+                            {obligation.deliverables.map((item, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                                <span className="text-sm">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <div className="font-medium mb-2">Deadlines</div>
+                          <ul className="space-y-1">
+                            {obligation.deadlines.map((item, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <div className="w-2 h-2 bg-red-400 rounded-full mt-2 flex-shrink-0"></div>
+                                <span className="text-sm">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -792,64 +792,31 @@ ${documentText}
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Eye className="mr-2 h-6 w-6 text-gray-600" />
-                  Extracted Document Text
-                </div>
-                <Button variant="outline" size="sm">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export Full Analysis
-                </Button>
+              <CardTitle className="flex items-center">
+                <FileText className="mr-2 h-6 w-6 text-blue-600" />
+                Original Document
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
-                <pre className="text-sm whitespace-pre-wrap font-mono">
-                  {analysis.documentText.substring(0, 2000)}
-                  {analysis.documentText.length > 2000 && '...\n\n[Text truncated for display]'}
+              <div className="relative">
+                <pre className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg max-h-[500px] overflow-auto">
+                  {analysis.documentText}
                 </pre>
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Original
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
-
-          <div className="flex justify-center gap-4">
-            <Button 
-              onClick={() => {
-                setCurrentStep('upload');
-                setAnalysis(null);
-              }}
-              variant="outline"
-            >
-              Analyze Another Contract
-            </Button>
-          </div>
         </div>
       )}
-
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <CardContent className="p-8">
-          <h3 className="text-2xl font-bold mb-4 text-center">Transform Your Contract Review Process</h3>
-          <div className="grid md:grid-cols-4 gap-6 text-center">
-            <div>
-              <div className="text-3xl font-bold text-blue-600 mb-2">95%</div>
-              <div className="text-sm text-gray-600">Faster contract review</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-600 mb-2">24/7</div>
-              <div className="text-sm text-gray-600">Automated analysis</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-green-600 mb-2">100%</div>
-              <div className="text-sm text-gray-600">Consistent evaluation</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-orange-600 mb-2">50+</div>
-              <div className="text-sm text-gray-600">Risk factors analyzed</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
