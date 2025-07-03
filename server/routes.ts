@@ -41,7 +41,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       formData.append('document', file);
       formData.append('model', 'document-parse');
-      formData.append('output_formats', JSON.stringify(["html", "markdown", "text"]));
 
       console.log("Making request to Upstage API...");
       
