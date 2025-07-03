@@ -25,6 +25,10 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://upstage-ai.onrender.com' 
+  : 'http://localhost:8000';
+
 interface ContractAnalysis {
   documentText: string;
   contractType: {
@@ -101,6 +105,87 @@ export default function ContractAnalyzer() {
     }
   };
 
+  // Helper function to validate parsed analysis against ContractAnalysis interface
+  const validateAnalysis = (parsed: any, documentText: string): ContractAnalysis => {
+    const fallback: ContractAnalysis = {
+      documentText,
+      contractType: {
+        category: 'Other',
+        subcategory: 'Requires manual classification',
+        description: 'Contract type requires detailed manual review'
+      },
+      parties: [
+        {
+          name: 'Party identification required',
+          role: 'Other',
+          contact: 'Not specified'
+        }
+      ],
+      financialTerms: {
+        totalValue: 'Requires manual extraction',
+        currency: 'Not specified',
+        paymentSchedule: 'Payment terms require manual review',
+        penalties: 'Penalty terms require manual review',
+        deposits: 'Deposit terms require manual review'
+      },
+      importantDates: {
+        effectiveDate: 'Not clearly specified',
+        expirationDate: 'Not clearly specified',
+        renewalDate: 'Not specified',
+        noticePeriod: 'Not specified',
+        keyMilestones: ['Manual review required for important dates']
+      },
+      riskAssessment: {
+        overallRisk: 'medium',
+        riskScore: 50,
+        riskFactors: [
+          {
+            category: 'Legal',
+            description: 'Document requires comprehensive manual legal review',
+            severity: 'medium'
+          }
+        ],
+        recommendations: ['Engage legal counsel for detailed contract review', 'Clarify ambiguous terms before signing'],
+        redFlags: ['Complex document structure requires expert analysis']
+      },
+      keyTerms: {
+        terminationClause: 'Termination terms require manual extraction',
+        liabilityLimits: 'Liability terms require manual review',
+        intellectualProperty: 'IP terms require manual review',
+        confidentiality: 'Confidentiality terms require manual review',
+        disputeResolution: 'Dispute resolution terms require manual review',
+        governingLaw: 'Governing law requires manual identification'
+      },
+      obligations: [
+        {
+          party: 'All Parties',
+          obligations: ['Detailed obligations require manual extraction'],
+          deliverables: ['Deliverables require manual identification'],
+          deadlines: ['Deadlines require manual extraction']
+        }
+      ],
+      summary: 'Contract analysis completed with automated extraction. The document contains complex legal language that requires detailed manual review by qualified legal counsel for comprehensive understanding of all terms and implications.'
+    };
+
+    if (!parsed || typeof parsed !== 'object') {
+      console.warn('Parsed analysis is invalid, using fallback:', parsed);
+      return fallback;
+    }
+
+    // Validate required fields and merge with fallback if necessary
+    return {
+      documentText,
+      contractType: parsed.contractType && typeof parsed.contractType === 'object' ? parsed.contractType : fallback.contractType,
+      parties: Array.isArray(parsed.parties) ? parsed.parties : fallback.parties,
+      financialTerms: parsed.financialTerms && typeof parsed.financialTerms === 'object' ? parsed.financialTerms : fallback.financialTerms,
+      importantDates: parsed.importantDates && typeof parsed.importantDates === 'object' ? parsed.importantDates : fallback.importantDates,
+      riskAssessment: parsed.riskAssessment && typeof parsed.riskAssessment === 'object' ? parsed.riskAssessment : fallback.riskAssessment,
+      keyTerms: parsed.keyTerms && typeof parsed.keyTerms === 'object' ? parsed.keyTerms : fallback.keyTerms,
+      obligations: Array.isArray(parsed.obligations) ? parsed.obligations : fallback.obligations,
+      summary: typeof parsed.summary === 'string' ? parsed.summary : fallback.summary
+    };
+  };
+
   const handleFileUpload = async (file: File) => {
     setIsProcessing(true);
     setCurrentStep('parsing');
@@ -113,15 +198,26 @@ export default function ContractAnalyzer() {
       const formData = new FormData();
       formData.append('document', file);
 
-      const parseResponse = await fetch('/api/document-parse', {
+      const parseUrl = `${API_BASE_URL}/api/document-parse`;
+      console.log('Sending request to:', parseUrl);
+      const parseResponse = await fetch(parseUrl, {
         method: 'POST',
         body: formData,
       });
 
       console.log('Document Parse API Response Status:', parseResponse.status, parseResponse.statusText);
 
+      // Check for non-JSON response
+      const contentType = parseResponse.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        const responseText = await parseResponse.text();
+        console.error('Non-JSON response received:', responseText.slice(0, 100));
+        throw new Error(`Expected JSON, received ${contentType}: ${responseText.slice(0, 100)}...`);
+      }
+
       if (!parseResponse.ok) {
-        throw new Error('Failed to parse document');
+        const errorData = await parseResponse.json().catch(() => ({ error: 'Invalid response', details: 'No response body' }));
+        throw new Error(`Document parse failed: ${errorData.error} - ${errorData.details}`);
       }
 
       const parseResult = await parseResponse.json();
@@ -252,7 +348,9 @@ ANALYSIS REQUIREMENTS:
 Focus on practical business implications and provide insights that would help in decision-making.
 `;
 
-      const analysisResponse = await fetch('/api/solar-chat', {
+      const analysisUrl = `${API_BASE_URL}/api/solar-chat`;
+      console.log('Sending request to:', analysisUrl);
+      const analysisResponse = await fetch(analysisUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -273,90 +371,45 @@ Focus on practical business implications and provide insights that would help in
         }),
       });
 
+      console.log('Solar LLM API Response Status:', analysisResponse.status, analysisResponse.statusText);
+
+      // Check for non-JSON response
+      const analysisContentType = analysisResponse.headers.get('content-type');
+      if (!analysisContentType?.includes('application/json')) {
+        const responseText = await analysisResponse.text();
+        console.error('Non-JSON response received:', responseText.slice(0, 100));
+        throw new Error(`Expected JSON, received ${analysisContentType}: ${responseText.slice(0, 100)}...`);
+      }
+
       if (!analysisResponse.ok) {
-        throw new Error('Failed to analyze contract');
+        const errorData = await analysisResponse.json().catch(() => ({ error: 'Invalid response', details: 'No response body' }));
+        throw new Error(`Contract analysis failed: ${errorData.error} - ${errorData.details}`);
       }
 
       const analysisResult = await analysisResponse.json();
-      const analysisContent = analysisResult.choices[0].message.content;
+      console.log('Raw analysis response:', analysisResult);
+      const analysisContent = analysisResult.choices?.[0]?.message?.content;
 
-      console.log('Raw analysis response:', analysisContent);
+      if (!analysisContent) {
+        console.error('No content in analysis response:', analysisResult);
+        throw new Error('No analysis content returned from Solar LLM');
+      }
 
       // Parse the JSON response
-      let parsedAnalysis;
+      let parsedAnalysis: ContractAnalysis;
       try {
         // Clean the response in case there's extra text
         const jsonMatch = analysisContent.match(/\{[\s\S]*\}/);
         const jsonString = jsonMatch ? jsonMatch[0] : analysisContent;
-        parsedAnalysis = JSON.parse(jsonString);
+        const rawParsed = JSON.parse(jsonString);
+        console.log('Parsed analysis:', rawParsed);
+        parsedAnalysis = validateAnalysis(rawParsed, documentText);
       } catch (e) {
-        console.error('JSON parsing failed:', e);
-        // Create a comprehensive fallback analysis
-        parsedAnalysis = {
-          contractType: {
-            category: 'Other',
-            subcategory: 'Requires manual classification',
-            description: 'Contract type requires detailed manual review'
-          },
-          parties: [
-            {
-              name: 'Party identification required',
-              role: 'Other',
-              contact: 'Not specified'
-            }
-          ],
-          financialTerms: {
-            totalValue: 'Requires manual extraction',
-            currency: 'Not specified',
-            paymentSchedule: 'Payment terms require manual review',
-            penalties: 'Penalty terms require manual review',
-            deposits: 'Deposit terms require manual review'
-          },
-          importantDates: {
-            effectiveDate: 'Not clearly specified',
-            expirationDate: 'Not clearly specified',
-            renewalDate: 'Not specified',
-            noticePeriod: 'Not specified',
-            keyMilestones: ['Manual review required for important dates']
-          },
-          riskAssessment: {
-            overallRisk: 'medium',
-            riskScore: 50,
-            riskFactors: [
-              {
-                category: 'Legal',
-                description: 'Document requires comprehensive manual legal review',
-                severity: 'medium'
-              }
-            ],
-            recommendations: ['Engage legal counsel for detailed contract review', 'Clarify ambiguous terms before signing'],
-            redFlags: ['Complex document structure requires expert analysis']
-          },
-          keyTerms: {
-            terminationClause: 'Termination terms require manual extraction',
-            liabilityLimits: 'Liability terms require manual review',
-            intellectualProperty: 'IP terms require manual review',
-            confidentiality: 'Confidentiality terms require manual review',
-            disputeResolution: 'Dispute resolution terms require manual review',
-            governingLaw: 'Governing law requires manual identification'
-          },
-          obligations: [
-            {
-              party: 'All Parties',
-              obligations: ['Detailed obligations require manual extraction'],
-              deliverables: ['Deliverables require manual identification'],
-              deadlines: ['Deadlines require manual extraction']
-            }
-          ],
-          summary: 'Contract analysis completed with automated extraction. The document contains complex legal language that requires detailed manual review by qualified legal counsel for comprehensive understanding of all terms and implications.'
-        };
+        console.error('JSON parsing failed:', e, 'Raw content:', analysisContent);
+        parsedAnalysis = validateAnalysis(null, documentText);
       }
 
-      setAnalysis({
-        documentText,
-        ...parsedAnalysis
-      });
-
+      setAnalysis(parsedAnalysis);
       setCurrentStep('complete');
       
       toast({
@@ -590,7 +643,7 @@ Focus on practical business implications and provide insights that would help in
               <Tabs defaultValue="parties" className="w-full">
                 <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="parties">Parties</TabsTrigger>
-                  {/* <TabsTrigger value="financial">Financial</TabsTrigger> */}
+                  <TabsTrigger value="financial">Financial</TabsTrigger>
                   <TabsTrigger value="dates">Dates</TabsTrigger>
                   <TabsTrigger value="risks">Risks</TabsTrigger>
                   <TabsTrigger value="terms">Key Terms</TabsTrigger>
@@ -818,8 +871,14 @@ Focus on practical business implications and provide insights that would help in
             <CardContent>
               <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
                 <pre className="text-sm whitespace-pre-wrap font-mono">
-                  {analysis.documentText.substring(0, 2000)}
-                  {analysis.documentText.length > 2000 && '...\n\n[Text truncated for display]'}
+                  {analysis.documentText ? (
+                    <>
+                      {analysis.documentText.substring(0, 2000)}
+                      {analysis.documentText.length > 2000 && '...\n\n[Text truncated for display]'}
+                    </>
+                  ) : (
+                    'No document text available'
+                  )}
                 </pre>
               </div>
             </CardContent>
