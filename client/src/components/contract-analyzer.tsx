@@ -129,8 +129,8 @@ export default function ContractAnalyzer() {
       const text = await response.text();
 
       try {
-        const result = JSON.parse(text);
-        res.status(response.status).json(result);
+        const parseResult = JSON.parse(text);
+        res.status(response.status).json(parseResult);
       } catch (e) {
         console.warn("Upstage response was not JSON:", text);
         res.status(response.status).json({ raw: text });
