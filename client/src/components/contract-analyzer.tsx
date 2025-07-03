@@ -112,7 +112,7 @@ export default function ContractAnalyzer() {
       formData.append('document', file);
 
       // Directly call Upstage Document Parse API
-      const upstageApiKey = process.env.NEXT_PUBLIC_UPSTAGE_API_KEY; // WARNING: Not secure for production
+      const upstageApiKey = "up_DYMaQNy182Y6aGaRJNQxXnvTcQ5di"; // WARNING: Not secure for production
       if (!upstageApiKey) {
         console.error('UPSTAGE_API_KEY is not set');
         throw new Error('Upstage API key is not configured');
