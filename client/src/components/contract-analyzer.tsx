@@ -588,9 +588,9 @@ Focus on practical business implications and provide insights that would help in
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="parties" className="w-full">
-                <TabsList className="grid w-full grid-cols-6">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="parties">Parties</TabsTrigger>
-                  <TabsTrigger value="financial">Financial</TabsTrigger>
+                  {/* <TabsTrigger value="financial">Financial</TabsTrigger> */}
                   <TabsTrigger value="dates">Dates</TabsTrigger>
                   <TabsTrigger value="risks">Risks</TabsTrigger>
                   <TabsTrigger value="terms">Key Terms</TabsTrigger>
@@ -835,10 +835,6 @@ Focus on practical business implications and provide insights that would help in
               variant="outline"
             >
               Analyze Another Contract
-            </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Download className="mr-2 h-4 w-4" />
-              Download Comprehensive Report
             </Button>
           </div>
         </div>
