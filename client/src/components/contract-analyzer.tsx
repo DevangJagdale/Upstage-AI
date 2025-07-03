@@ -643,7 +643,7 @@ Focus on practical business implications and provide insights that would help in
               <Tabs defaultValue="parties" className="w-full">
                 <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="parties">Parties</TabsTrigger>
-                  <TabsTrigger value="financial">Financial</TabsTrigger>
+{/*                   <TabsTrigger value="financial">Financial</TabsTrigger> */}
                   <TabsTrigger value="dates">Dates</TabsTrigger>
                   <TabsTrigger value="risks">Risks</TabsTrigger>
                   <TabsTrigger value="terms">Key Terms</TabsTrigger>
