@@ -1,6 +1,6 @@
 # 🚀 Upstage AI Demo Showcase: Smart Contract Analysis Platform
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Site-blue?style=for-the-badge)](https://upstage-ai.onrender.com/)
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Site-blue?style=for-the-badge)]([https://upstage-ai.onrender.com/](https://smart-contract-analyzer.onrender.com))
 [![GitHub](https://img.shields.io/badge/📂_Source_Code-GitHub-black?style=for-the-badge)](https://github.com/DevangJagdale/Upstage-AI)
 [![Beginner Friendly](https://img.shields.io/badge/👶_Beginner-Friendly-green?style=for-the-badge)]()
 
